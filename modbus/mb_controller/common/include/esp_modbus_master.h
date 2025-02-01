@@ -325,6 +325,30 @@ esp_err_t mbc_master_get_cid_info(void *ctx, uint16_t cid, const mb_parameter_de
 */
 esp_err_t mbc_master_get_parameter(void *ctx, uint16_t cid, uint8_t *value, uint8_t *type);
 
+
+/**
+ * @brief Read multiple parameter from modbus slave device whose name is defined by cid.
+ *        The additional data for request is taken from parameter description (lookup) table.
+ *
+ * @param[in] ctx context pointer of the initialized modbus interface
+ * @param[in] parameter_number number of parameters to read
+ * @param[in] cid id of the characteristic for parameter
+ * @param[out] value pointer to data buffer of parameter
+ *
+ * @return
+ *     - esp_err_t ESP_OK - request was successful and value buffer contains
+ *                          representation of actual parameter data from slave
+ *     - esp_err_t ESP_ERR_INVALID_ARG - invalid argument of function or parameter descriptor
+ *     - esp_err_t ESP_ERR_INVALID_RESPONSE - an invalid response from slave
+ *     - esp_err_t ESP_ERR_INVALID_STATE - invalid state during data processing or allocation failure
+ *     - esp_err_t ESP_ERR_NOT_FOUND - the requested slave is not found (not connected or not configured)
+ *     - esp_err_t ESP_ERR_TIMEOUT - operation timed out and no response from slave
+ *     - esp_err_t ESP_ERR_NOT_SUPPORTED - the request command is not supported by slave
+ *     - esp_err_t ESP_ERR_NOT_FOUND - the parameter is not found in the parameter description table
+ *     - esp_err_t ESP_FAIL - slave returned an exception or other failure
+ */
+esp_err_t mbc_master_get_multiple_parameter(void *ctx, uint16_t cid, uint16_t parameter_number, uint8_t *value);
+
 /**
  * @brief Read parameter from modbus slave device whose name is defined by name and has cid.
  *        The additional data for request is taken from parameter description (lookup) table.

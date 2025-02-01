@@ -132,6 +132,25 @@ esp_err_t mbc_master_get_parameter(void *ctx, uint16_t cid, uint8_t *value, uint
 }
 
 /**
+ * Get multiple parameter data for corresponding characteristic
+ */
+esp_err_t mbc_master_get_multiple_parameter(void *ctx, uint16_t cid, uint16_t parameter_number, uint8_t *value)
+{
+    esp_err_t error = ESP_OK;
+    MB_RETURN_ON_FALSE(ctx, ESP_ERR_INVALID_STATE, TAG,
+                       "Master interface is not correctly initialized.");
+    mbm_controller_iface_t *mbm_controller = MB_MASTER_GET_IFACE(ctx);
+    MB_RETURN_ON_FALSE((mbm_controller->get_multiple_parameter && mbm_controller->is_active),
+                       ESP_ERR_INVALID_STATE, TAG,
+                       "Master interface is not correctly configured.");
+    error = mbm_controller->get_multiple_parameter(ctx, cid, parameter_number, value);
+    MB_RETURN_ON_FALSE((error == ESP_OK), error, TAG,
+                       "Master multiple get parameter failure, error=(0x%x) (%s).",
+                       (uint16_t)error, esp_err_to_name(error));
+    return error;
+}
+
+/**
  * Get parameter data for corresponding characteristic
  */
 esp_err_t mbc_master_get_parameter_with(void *ctx, uint16_t cid, uint8_t uid, uint8_t *value, uint8_t *type)

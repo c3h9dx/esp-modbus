@@ -53,13 +53,14 @@ typedef struct {
     size_t mbm_param_descriptor_size;                   /*!< Modbus controller parameter description table size */
 } mb_master_options_t;
 
-typedef esp_err_t (*iface_get_cid_info_fp)(void *, uint16_t, const mb_parameter_descriptor_t **);           /*!< Interface get_cid_info method */
-typedef esp_err_t (*iface_get_parameter_fp)(void *, uint16_t, uint8_t *, uint8_t *);                        /*!< Interface get_parameter method */
-typedef esp_err_t (*iface_get_parameter_with_fp)(void *, uint16_t, uint8_t, uint8_t *, uint8_t *);          /*!< Interface get_parameter_with method */
-typedef esp_err_t (*iface_send_request_fp)(void *, mb_param_request_t*, void *);                            /*!< Interface send_request method */
-typedef esp_err_t (*iface_mbm_set_descriptor_fp)(void *, const mb_parameter_descriptor_t*, const uint16_t);     /*!< Interface set_descriptor method */
-typedef esp_err_t (*iface_set_parameter_fp)(void *, uint16_t, uint8_t *, uint8_t *);                        /*!< Interface set_parameter method */
-typedef esp_err_t (*iface_set_parameter_with_fp)(void *, uint16_t, uint8_t, uint8_t *, uint8_t *);          /*!< Interface set_parameter_with method */
+typedef esp_err_t (*iface_get_cid_info_fp)(void *, uint16_t, const mb_parameter_descriptor_t **);                          /*!< Interface get_cid_info method */
+typedef esp_err_t (*iface_get_parameter_fp)(void *, uint16_t, uint8_t *, uint8_t *);                                       /*!< Interface get_parameter method */
+typedef esp_err_t (*iface_get_multiple_parameter_fp)(void *ctx, uint16_t cid, uint16_t parameter_number, uint8_t *value);  /*!< Interface get_multiple_parameter method */
+typedef esp_err_t (*iface_get_parameter_with_fp)(void *, uint16_t, uint8_t, uint8_t *, uint8_t *);                         /*!< Interface get_parameter_with method */
+typedef esp_err_t (*iface_send_request_fp)(void *, mb_param_request_t*, void *);                                           /*!< Interface send_request method */
+typedef esp_err_t (*iface_mbm_set_descriptor_fp)(void *, const mb_parameter_descriptor_t*, const uint16_t);                /*!< Interface set_descriptor method */
+typedef esp_err_t (*iface_set_parameter_fp)(void *, uint16_t, uint8_t *, uint8_t *);                                       /*!< Interface set_parameter method */
+typedef esp_err_t (*iface_set_parameter_with_fp)(void *, uint16_t, uint8_t, uint8_t *, uint8_t *);                         /*!< Interface set_parameter_with method */
 
 /**
  * @brief Modbus controller interface structure
@@ -71,17 +72,18 @@ typedef struct {
     bool is_active;                                 /*!< Interface is active */
 
     // Public interface methods
-    iface_create_fp create;                         /*!< Interface constructor */
-    iface_method_default_fp delete;                 /*!< Interface method delete */
-    iface_method_default_fp start;                  /*!< Interface method start */
-    iface_method_default_fp stop;                   /*!< Interface method stop */
-    iface_get_cid_info_fp get_cid_info;             /*!< Interface get_cid_info method */
-    iface_get_parameter_fp get_parameter;           /*!< Interface get_parameter method */
-    iface_get_parameter_with_fp get_parameter_with; /*!< Interface get_parameter_with method */
-    iface_send_request_fp send_request;             /*!< Interface send_request method */
-    iface_mbm_set_descriptor_fp set_descriptor;     /*!< Interface set_descriptor method */
-    iface_set_parameter_fp set_parameter;           /*!< Interface set_parameter method */
-    iface_set_parameter_with_fp set_parameter_with; /*!< Interface set_parameter_with method */
+    iface_create_fp create;                                  /*!< Interface constructor */
+    iface_method_default_fp delete;                          /*!< Interface method delete */
+    iface_method_default_fp start;                           /*!< Interface method start */
+    iface_method_default_fp stop;                            /*!< Interface method stop */
+    iface_get_cid_info_fp get_cid_info;                      /*!< Interface get_cid_info method */
+    iface_get_parameter_fp get_parameter;                    /*!< Interface get_parameter method */
+    iface_get_multiple_parameter_fp get_multiple_parameter;  /*!< Interface get_multiple_parameter method */
+    iface_get_parameter_with_fp get_parameter_with;          /*!< Interface get_parameter_with method */
+    iface_send_request_fp send_request;                      /*!< Interface send_request method */
+    iface_mbm_set_descriptor_fp set_descriptor;              /*!< Interface set_descriptor method */
+    iface_set_parameter_fp set_parameter;                    /*!< Interface set_parameter method */
+    iface_set_parameter_with_fp set_parameter_with;          /*!< Interface set_parameter_with method */
 } mbm_controller_iface_t;
 
 #ifdef __cplusplus

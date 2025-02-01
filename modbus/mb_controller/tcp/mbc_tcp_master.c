@@ -669,6 +669,7 @@ esp_err_t mbc_tcp_master_controller_create(void ** ctx)
     mbm_controller_iface->stop = mbc_tcp_master_stop;
     mbm_controller_iface->get_cid_info = mbc_tcp_master_get_cid_info;
     mbm_controller_iface->get_parameter = mbc_tcp_master_get_parameter;
+    mbm_controller_iface->get_multiple_parameter = NULL;
     mbm_controller_iface->get_parameter_with = mbc_tcp_master_get_parameter_with;
     mbm_controller_iface->send_request = mbc_tcp_master_send_request;
     mbm_controller_iface->set_descriptor = mbc_tcp_master_set_descriptor;

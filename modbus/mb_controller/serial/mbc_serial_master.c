@@ -422,6 +422,83 @@ static esp_err_t mbc_serial_master_get_parameter(void *ctx, uint16_t cid, uint8_
     }
     return error;
 }
+
+static esp_err_t mbc_serial_master_get_multiple_parameter(void *ctx, uint16_t cid, uint16_t parameter_number, uint8_t *value)
+{
+    MB_RETURN_ON_FALSE((value), ESP_ERR_INVALID_ARG, TAG, "value pointer is incorrect.");
+    esp_err_t error = ESP_ERR_INVALID_RESPONSE;
+    mb_param_request_t request ;
+    uint8_t *pdata = NULL;
+
+    mb_master_options_t *mbm_opts = MB_MASTER_GET_OPTS(ctx);
+
+    MB_RETURN_ON_FALSE((cid < mbm_opts->mbm_param_descriptor_size), ESP_ERR_INVALID_ARG, TAG, "mb incorrect cid parameter.");
+    MB_RETURN_ON_FALSE((cid + parameter_number <= mbm_opts->mbm_param_descriptor_size), ESP_ERR_INVALID_ARG, TAG, "mb incorrect parameter_number parameter.");
+    MB_RETURN_ON_FALSE((mbm_opts->param_descriptor_table), ESP_ERR_INVALID_ARG, TAG, "mb data dictionary is incorrect.");
+
+    const mb_parameter_descriptor_t *first_reg_ptr = &mbm_opts->param_descriptor_table[cid];
+
+    MB_RETURN_ON_FALSE((first_reg_ptr->cid == cid), ESP_ERR_INVALID_ARG, TAG, "mb data dictionary is incorrect.");
+
+    request.slave_addr = first_reg_ptr->mb_slave_addr;
+    request.reg_start = first_reg_ptr->mb_reg_start;
+    request.reg_size = first_reg_ptr->mb_size;
+
+    for (int c = cid + 1; c < cid + parameter_number; ++c) {
+        const mb_parameter_descriptor_t *next_reg_ptr = &mbm_opts->param_descriptor_table[c];
+        request.reg_size += next_reg_ptr->mb_size;
+
+        MB_RETURN_ON_FALSE((next_reg_ptr->mb_param_type == first_reg_ptr->mb_param_type), ESP_ERR_INVALID_ARG, TAG, "mb multiple param type.");
+        MB_RETURN_ON_FALSE((next_reg_ptr->cid == c), ESP_ERR_INVALID_ARG, TAG, "mb data dictionary is incorrect.");
+        MB_RETURN_ON_FALSE((request.slave_addr == next_reg_ptr->mb_slave_addr), ESP_ERR_INVALID_ARG, TAG, "mb multiple slave addr.");
+    }
+
+    request.command = mbc_serial_master_get_command(first_reg_ptr->mb_param_type, MB_PARAM_READ);
+    MB_RETURN_ON_FALSE((request.command > 0), ESP_ERR_INVALID_ARG, TAG, "mb incorrect command or parameter type.");
+
+    if (request.slave_addr != MB_SLAVE_ADDR_PLACEHOLDER) {
+        MB_MASTER_ASSERT(xPortGetFreeHeapSize() > (request.reg_size << 1));
+        // alloc buffer to store parameter data
+        pdata = calloc(1, (request.reg_size << 1));
+        if (!pdata) {
+            return ESP_ERR_INVALID_STATE;
+        }
+        error = mbc_serial_master_send_request(ctx, &request, pdata);
+        if (error == ESP_OK) {
+            // If data pointer is NULL then we don't need to set value (it is still in the cache of cid)
+            if (value) {
+                const mb_parameter_descriptor_t* tmp = first_reg_ptr;
+                uint8_t* pdata_tmp = pdata;
+
+                for (int c = cid; c < cid + parameter_number; ++c) {
+                    error = mbc_master_set_param_data((void*)value, (void*)pdata_tmp, tmp->param_type, tmp->param_size);
+
+                    if (error != ESP_OK) {
+                        ESP_LOGE(TAG, "fail to set parameter data.");
+                        error = ESP_ERR_INVALID_STATE;
+                    }
+                    else {
+                        ESP_LOGD(TAG, "%s: Good response for get cid(%u) = %s", __FUNCTION__, (unsigned)tmp->cid, (char*)esp_err_to_name(error));
+                    }
+
+                    pdata_tmp += (tmp->mb_size << 1);
+                    value += (tmp->param_size);
+                    tmp += 1;
+                }
+            }
+        } else {
+            ESP_LOGD(TAG, "%s: Bad response to get cid(%u - %u) = %s",
+                     __FUNCTION__, (unsigned)first_reg_ptr->cid, (unsigned)first_reg_ptr->cid + parameter_number - 1, (char *)esp_err_to_name(error));
+        }
+        free(pdata);
+    } else {
+        ESP_LOGE(TAG, "%s: The cid(%u - %u) not found in the data dictionary.",
+                 __FUNCTION__, (unsigned)first_reg_ptr->cid, (unsigned)first_reg_ptr->cid + parameter_number - 1);
+        error = ESP_ERR_INVALID_ARG;
+    }
+    return error;
+}
+
 // Get parameter data for corresponding characteristic
 static esp_err_t mbc_serial_master_get_parameter_with(void *ctx, uint16_t cid, uint8_t uid,
                                                       uint8_t *value_ptr, uint8_t *type)
@@ -642,6 +719,7 @@ static esp_err_t mbc_serial_master_controller_create(void **ctx)
     mbm_controller_iface->stop = mbc_serial_master_stop;
     mbm_controller_iface->get_cid_info = mbc_serial_master_get_cid_info;
     mbm_controller_iface->get_parameter = mbc_serial_master_get_parameter;
+    mbm_controller_iface->get_multiple_parameter = mbc_serial_master_get_multiple_parameter;
     mbm_controller_iface->get_parameter_with = mbc_serial_master_get_parameter_with;
     mbm_controller_iface->send_request = mbc_serial_master_send_request;
     mbm_controller_iface->set_descriptor = mbc_serial_master_set_descriptor;
