@@ -135,7 +135,7 @@ bool mb_port_event_get(mb_port_base_t *inst, mb_event_t *pevent)
                             "incorrect object handle.");
     bool event_happened = false;
 
-    if (xQueueReceive(inst->event_obj->event_hdl, pevent, MB_EVENT_QUEUE_TIMEOUT_MAX) == pdTRUE) {
+    if (xQueueReceive(inst->event_obj->event_hdl, pevent, portMAX_DELAY) == pdTRUE) {
         pevent->trans_id = atomic_load(&inst->event_obj->curr_trans_id);
         pevent->get_ts = esp_timer_get_time();
         event_happened = true;
