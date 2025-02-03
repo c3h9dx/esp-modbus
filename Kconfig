@@ -55,10 +55,14 @@ menu "Modbus configuration"
         help
                 Enable ASCII Modbus communication mode option for Modbus serial stack.
 
+    config FMB_EVENT_QUEUE_TIMEOUT_MAX
+        int "MB Event Queue max timeout (Milliseconds)"
+        default 3000
+
     config FMB_MASTER_TIMEOUT_MS_RESPOND
         int "Slave respond timeout (Milliseconds)"
-        default 10000
-        range 150 30000
+        default 2000
+        range 150 FMB_EVENT_QUEUE_TIMEOUT_MAX
         help
                 If master sends a frame which is not broadcast, it has to wait some time for slave response.
                 if slave is not respond in this time, the master will process timeout error.

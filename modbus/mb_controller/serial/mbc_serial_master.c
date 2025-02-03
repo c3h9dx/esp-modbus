@@ -140,8 +140,6 @@ static esp_err_t mbc_serial_master_set_descriptor(void *ctx, const mb_parameter_
         // Below is the code to check consistency of the table format and required fields.
         MB_RETURN_ON_FALSE((reg_ptr->cid == counter),
                            ESP_ERR_INVALID_ARG, TAG, "mb descriptor cid field is incorrect.");
-        MB_RETURN_ON_FALSE((reg_ptr->param_key),
-                           ESP_ERR_INVALID_ARG, TAG, "mb descriptor param key is incorrect.");
         MB_RETURN_ON_FALSE((reg_ptr->mb_size > 0),
                            ESP_ERR_INVALID_ARG, TAG, "mb descriptor param size is incorrect.");
     }
@@ -306,8 +304,6 @@ static esp_err_t mbc_serial_master_get_cid_info(void *ctx, uint16_t cid, const m
     // It is assumed that characteristics cid increased in the table
     const mb_parameter_descriptor_t *reg_info = &mbm_opts->param_descriptor_table[cid];
 
-    MB_RETURN_ON_FALSE((reg_info->param_key),
-                       ESP_ERR_INVALID_ARG, TAG, "mb incorrect characteristic key.");
     *param_buffer = reg_info;
     return ESP_OK;
 }

@@ -324,24 +324,30 @@ bool mb_port_ser_send_data(mb_port_base_t *inst, uint8_t *p_ser_frame, uint16_t 
     int count = 0;
     mb_ser_port_t *port_obj = __containerof(inst, mb_ser_port_t, base);
 
-    res = mb_port_ser_bus_sema_take(inst, pdMS_TO_TICKS(mb_port_timer_get_response_time_ms(inst)));
-    if (res && p_ser_frame && ser_length && atomic_load(&(port_obj->enabled))) {
-        // Flush buffer received from previous transaction
-        mb_port_ser_rx_flush(inst);
-        count = uart_write_bytes(port_obj->ser_opts.port, p_ser_frame, ser_length);
-        // Waits while UART sending the packet
-        esp_err_t status = uart_wait_tx_done(port_obj->ser_opts.port, MB_SERIAL_TX_TOUT_TICKS);
-        (void)mb_port_event_post(inst, EVENT(EV_FRAME_SENT));
-        ESP_LOGD(TAG, "%s, tx buffer sent: (%d) bytes.", inst->descr.parent_name, (int)count);
-        MB_RETURN_ON_FALSE((status == ESP_OK), false, TAG, "%s, mb serial sent buffer failure.",
-                                inst->descr.parent_name);
-        ESP_LOG_BUFFER_HEX_LEVEL(MB_STR_CAT(inst->descr.parent_name, ":PORT_SEND"),
-                                    (void *)p_ser_frame, ser_length, ESP_LOG_DEBUG);
-        port_obj->send_time_stamp = esp_timer_get_time();
-    } else {
-        ESP_LOGE(TAG, "%s, send fail state:%d, %p, %u. ", inst->descr.parent_name, (int)port_obj->tx_state_en, p_ser_frame, (unsigned)ser_length);
+    if (ser_length && atomic_load(&(port_obj->enabled))) {
+        res = mb_port_ser_bus_sema_take(inst, pdMS_TO_TICKS(mb_port_timer_get_response_time_ms(inst)));
+        if (res && p_ser_frame && ser_length && atomic_load(&(port_obj->enabled))) {
+            // Flush buffer received from previous transaction
+            mb_port_ser_rx_flush(inst);
+            count = uart_write_bytes(port_obj->ser_opts.port, p_ser_frame, ser_length);
+            // Waits while UART sending the packet
+            esp_err_t status = uart_wait_tx_done(port_obj->ser_opts.port, MB_SERIAL_TX_TOUT_TICKS);
+            mb_port_ser_bus_sema_release(inst);
+
+            (void)mb_port_event_post(inst, EVENT(EV_FRAME_SENT));
+            ESP_LOGD(TAG, "%s, tx buffer sent: (%d) bytes.", inst->descr.parent_name, (int)count);
+            MB_RETURN_ON_FALSE((status == ESP_OK), false, TAG, "%s, mb serial sent buffer failure.",
+                                    inst->descr.parent_name);
+            ESP_LOG_BUFFER_HEX_LEVEL(MB_STR_CAT(inst->descr.parent_name, ":PORT_SEND"),
+                                        (void *)p_ser_frame, ser_length, ESP_LOG_DEBUG);
+            port_obj->send_time_stamp = esp_timer_get_time();
+        } else {
+            ESP_LOGE(TAG, "%s, send fail state:%d, %p, %u. ", inst->descr.parent_name, (int)port_obj->tx_state_en, p_ser_frame, (unsigned)ser_length);
+        }
     }
-    mb_port_ser_bus_sema_release(inst);
+    else {
+        ESP_LOGE(TAG, "%s, send fail state:%d. ", inst->descr.parent_name, (int)port_obj->tx_state_en);
+    }
     return res;
 }
 
