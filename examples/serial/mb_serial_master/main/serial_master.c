@@ -466,6 +466,10 @@ static esp_err_t master_init(void)
     MB_RETURN_ON_FALSE((err == ESP_OK), ESP_ERR_INVALID_STATE, TAG,
                             "mb controller initialization fail, returns(0x%x).", (int)err);
 
+    err = mbc_master_set_descriptor(master_handle, &device_parameters[0], num_device_parameters);
+    MB_RETURN_ON_FALSE((err == ESP_OK), ESP_ERR_INVALID_STATE, TAG,
+                       "mb controller set descriptor fail, returns(0x%x).", (int)err);
+
     // Set UART pin numbers
     err = uart_set_pin(MB_PORT_NUM, CONFIG_MB_UART_TXD, CONFIG_MB_UART_RXD,
                               CONFIG_MB_UART_RTS, UART_PIN_NO_CHANGE);
@@ -482,9 +486,7 @@ static esp_err_t master_init(void)
             "mb serial set mode failure, uart_set_mode() returned (0x%x).", (int)err);
 
     vTaskDelay(5);
-    err = mbc_master_set_descriptor(master_handle, &device_parameters[0], num_device_parameters);
-    MB_RETURN_ON_FALSE((err == ESP_OK), ESP_ERR_INVALID_STATE, TAG,
-                                "mb controller set descriptor fail, returns(0x%x).", (int)err);
+
     ESP_LOGI(TAG, "Modbus master stack initialized...");
     return err;
 }
